@@ -3,12 +3,16 @@ from django.shortcuts import render
 from blog.models import Comment, Post, Tag
 
 
-def get_likes_count(post):
-    return post.likes_count
+def get_most_popular_posts():
+    posts = Post.objects.annotate(Count('likes'))
+    popular_posts = posts.order_by('-likes__count')
+    return popular_posts[:5]
 
 
-def get_related_posts_count(tag):
-    return tag.posts.count()
+def get_most_popular_tags():
+    tags = Tag.objects.annotate(Count('posts'))
+    popular_tags = tags.order_by('-posts__count')
+    return popular_tags[:5]
 
 
 def serialize_post(post):
@@ -34,16 +38,12 @@ def serialize_tag(tag):
 
 def index(request):
 
-    posts = Post.objects.annotate(likes_count = Count('likes'))
-    popular_posts = sorted(posts, key=get_likes_count)
-    most_popular_posts = popular_posts[-5:]
+    most_popular_posts = get_most_popular_posts()
 
     fresh_posts = Post.objects.order_by('published_at')
     most_fresh_posts = list(fresh_posts)[-5:]
 
-    tags = Tag.objects.all()
-    popular_tags = sorted(tags, key=get_related_posts_count)
-    most_popular_tags = popular_tags[-5:]
+    most_popular_tags = get_most_popular_tags()
 
     context = {
         'most_popular_posts': [
@@ -82,11 +82,9 @@ def post_detail(request, slug):
         'tags': [serialize_tag(tag) for tag in related_tags],
     }
 
-    all_tags = Tag.objects.all()
-    popular_tags = sorted(all_tags, key=get_related_posts_count)
-    most_popular_tags = popular_tags[-5:]
+    most_popular_tags = get_most_popular_tags()
 
-    most_popular_posts = []  # TODO. Как это посчитать?
+    most_popular_posts = get_most_popular_posts()
 
     context = {
         'post': serialized_post,
@@ -101,11 +99,9 @@ def post_detail(request, slug):
 def tag_filter(request, tag_title):
     tag = Tag.objects.get(title=tag_title)
 
-    all_tags = Tag.objects.all()
-    popular_tags = sorted(all_tags, key=get_related_posts_count)
-    most_popular_tags = popular_tags[-5:]
+    most_popular_tags = get_most_popular_tags()
 
-    most_popular_posts = []  # TODO. Как это посчитать?
+    most_popular_posts = get_most_popular_posts()
 
     related_posts = tag.posts.all()[:20]
 
