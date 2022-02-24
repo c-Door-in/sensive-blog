@@ -4,7 +4,7 @@ from blog.models import Comment, Post, Tag
 
 
 def get_most_popular_posts():
-    posts = Post.objects.annotate(Count('likes'))
+    posts = Post.objects.annotate(Count('likes')).prefetch_related('author')
     popular_posts = posts.order_by('-likes__count')
     return popular_posts[:5]
 
@@ -40,8 +40,8 @@ def index(request):
 
     most_popular_posts = get_most_popular_posts()
 
-    fresh_posts = Post.objects.order_by('published_at')
-    most_fresh_posts = list(fresh_posts)[-5:]
+    fresh_posts = Post.objects.order_by('-published_at').prefetch_related('author')
+    most_fresh_posts = list(fresh_posts)[:5]
 
     most_popular_tags = get_most_popular_tags()
 
