@@ -4,10 +4,10 @@ from blog.models import Comment, Post, Tag
 
 
 def get_most_fresh_posts():
-    fresh_posts = Post.objects.order_by('-published_at') \
-                              .annotate(comments_count=Count('comments')) \
-                              .prefetch_related('author') \
-                              .prefetch_related('tags')
+    fresh_posts = Post.objects.prefetch_related('author') \
+                              .prefetch_related('tags') \
+                              .order_by('-published_at') \
+                              .annotate(comments_count=Count('comments'))
     return list(fresh_posts)[:5]
 
 
@@ -49,8 +49,8 @@ def serialize_tag(tag):
 def index(request):
 
     most_popular_posts = Post.objects.popular() \
-                             .prefetch_related('author')[:5] \
-                             .prefetch_related('tags') \
+                             .prefetch_related('author') \
+                             .prefetch_related('tags')[:5] \
                              .fetch_with_comments_count()
 
     most_fresh_posts = get_most_fresh_posts()
